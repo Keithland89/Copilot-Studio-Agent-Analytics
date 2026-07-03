@@ -2,19 +2,20 @@
 
 # 🤖 Copilot Studio Agent Analytics
 
-### Run the AI Business Value Dashboard **straight off Dataverse** — no Fabric, no Lakehouse, no notebooks.
+### A Power BI template for **deep Copilot Studio agent performance & evaluation** — quality, containment, topics, errors, feedback, and message-credit consumption.
 
 [![Built by Microsoft](https://img.shields.io/badge/BUILT_BY-MICROSOFT-4F73B8?style=for-the-badge&labelColor=1C2632)](https://github.com/Keithland89/Copilot-Studio-Agent-Analytics)
 [![Power BI Template](https://img.shields.io/badge/POWER_BI-TEMPLATE-F2C811?style=for-the-badge&logo=powerbi&logoColor=1C2632&labelColor=1C2632)](#connect-the-template)
-[![Deploy](https://img.shields.io/badge/DEPLOY-DATAVERSE-09B39D?style=for-the-badge&labelColor=1C2632)](#connect-the-template)
+[![Deploy](https://img.shields.io/badge/DEPLOY-DATAVERSE_OR_FABRIC-09B39D?style=for-the-badge&labelColor=1C2632)](#deployment-options)
 [![Stars](https://img.shields.io/github/stars/Keithland89/Copilot-Studio-Agent-Analytics?style=for-the-badge&color=7F215D&labelColor=1C2632)](https://github.com/Keithland89/Copilot-Studio-Agent-Analytics/stargazers)
 
-**Agent sessions · turns · errors · sub-agent calls · performance** — Copilot Studio transcripts
-parsed **inside the Power BI model (Power Query M)**, so there's nothing else to stand up.
+**Agent sessions · turns · errors · sub-agent calls · quality & performance · topics · knowledge files ·
+user feedback · Copilot Studio message-credit consumption** — purpose-built to analyse how your
+**Copilot Studio agents** actually perform, resolve, contain, and cost.
 
 Found this useful? ⭐ **Star this repo to help others discover it!**
 
-**[Connect the template ↓](#connect-the-template)** · **[Other templates ↓](#other-deployment-options)**
+**[Deployment options ↓](#deployment-options)** · **[Connect the template ↓](#connect-the-template)**
 
 </div>
 
@@ -32,6 +33,21 @@ Dataverse. Transcripts are intended to give visibility into agent interactions, 
 sole source of truth for licensing or full-fidelity reporting. Not supported through Microsoft
 support channels — please open an issue in this repo.
 </details>
+
+---
+
+## Deployment options
+
+Two builds of the **same Copilot Studio Agent Analytics** template — pick the one that fits your platform:
+
+| Build | Best for | Needs | Where |
+|---|---|---|---|
+| **Dataverse-native** ⭐ | simplest footprint — transcripts parsed **in the Power BI model** (Power Query M), nothing else to stand up | a Dataverse env + a CSV folder | this folder (repo root) |
+| **Fabric / Lakehouse** | scheduled Spark ingestion, larger volumes, and **PPAC message-credit** pages | a Fabric capacity + Lakehouse | [`Fabric/`](./Fabric/) |
+
+Both surface the same Copilot Studio agent analytics; the Dataverse build reads live transcripts, the
+Fabric build lands them (plus credit consumption) as Delta tables. The rest of this page covers the
+**Dataverse-native** build; see [`Fabric/README.md`](./Fabric/README.md) for the Fabric build.
 
 ---
 
@@ -185,18 +201,14 @@ the environment simply has no Copilot Studio transcripts in scope yet.
 
 ---
 
-> **Credit / Cost consumption is not part of this template.** This Dataverse build is deliberately
-> scoped to **Copilot Studio** analytics (transcripts + org + optional Agents 365). For the billing /
-> credit-consumption pages, use the **Fabric** or **SharePoint** template.
+> **Credit / message-credit consumption:** the **Dataverse-native** build is scoped to Copilot Studio
+> transcript analytics (transcripts + org + optional Agents 365). For **PPAC Copilot Studio
+> message-credit** pages, use the **[Fabric build](./Fabric/)** in this repo.
 
-## Other deployment options
+## Related
 
-This repo is the **Dataverse-native** build. Two sibling templates live in the main
-[AI Business Value Dashboard](https://github.com/Keithland89/AI-Business-Value-Dashboard) repo —
-each self-contained, so pick the one that fits your platform:
-
-| Template | Best for | Needs |
-|---|---|---|
-| [Fabric](https://github.com/Keithland89/AI-Business-Value-Dashboard/tree/main/1.%20Fabric) | large tenants, scheduled Spark ingestion | Fabric capacity + Lakehouse |
-| [SharePoint](https://github.com/Keithland89/AI-Business-Value-Dashboard/tree/main/2.%20SharePoint) | flat-file / Power Automate landing | a SharePoint library |
-| **Dataverse** *(this repo)* | **simplest footprint** | a Dataverse env + a CSV folder |
+This is a **standalone** template focused on **Copilot Studio agent performance & evaluation**. If you
+also want the broader **Microsoft 365 Copilot** value story (audit-log usage, licensing/readiness,
+adoption, org-wide value across all Copilot surfaces — not just Studio agents), that's a **separate**
+project: the [AI Business Value Dashboard](https://github.com/Keithland89/AI-Business-Value-Dashboard).
+The two are complementary but independent — use this one when your focus is **Copilot Studio agents**.
