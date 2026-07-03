@@ -56,7 +56,7 @@ The `.pbit` is **pre-set to Dataverse** — you only set three parameters:
 
 | Parameter | Required? | Value |
 |---|---|---|
-| **Dataverse Url** | **Yes** | your environment URL, e.g. `https://yourorg.crm.dynamics.com` |
+| **Dataverse Url** | **Yes** | your environment URL, e.g. `https://yourorg.crm.dynamics.com` — or **several** separated by `;` to combine environments (see below) |
 | **Org Data CSV** | **Yes** | full file path (SharePoint URL or local/synced/UNC) to `copilot_org_data.csv` |
 | **Agent 365 CSV** | optional | full file path to `agents_365.csv` — **leave blank to skip** |
 
@@ -66,6 +66,46 @@ level to **Organizational** if prompted. Then enable **Scheduled refresh** in th
 
 > **No app registration / client secret** — the report uses the native Dataverse connector with the
 > refresher's own org login.
+
+<details>
+<summary><strong>Multiple environments in one report</strong> — combine several Dataverse orgs</summary>
+
+The **Dataverse Url** parameter accepts **more than one environment URL**, separated by a **semicolon**
+(or one per line):
+
+```
+https://org-a.crm.dynamics.com; https://org-b.crm.dynamics.com; https://org-c.crm.dynamics.com
+```
+
+The model pulls `conversationtranscripts` from **every** environment in a single refresh, tags each row
+with the source **`environment`**, and unions them — so all agents across all environments appear in
+one report. A single URL still works exactly as before.
+
+**Robust by design:** each environment is fetched independently inside a `try…otherwise`, so an
+unreachable or empty environment is **skipped**, not fatal — the refresh still completes with the
+environments that did respond.
+
+**What you need to do:**
+
+1. **List the environment URLs** in the **Dataverse Url** parameter, semicolon-separated (Power Platform
+   Admin Center → Environments → *each env* → **Environment URL**).
+2. **Read access in every environment.** The refresher's org login needs **Read** on the **Conversation
+   Transcript** table in **each** environment (same role as the single-env case — e.g. System
+   Customizer / Environment Maker — granted per environment).
+3. **Sign in per environment on first refresh.** Each environment URL is a **separate data source**, so
+   Power BI prompts once per environment — choose **Organizational account** and set privacy to
+   **Organizational** for each. In the Service, **Scheduled refresh** needs credentials configured for
+   **every** environment URL under dataset **Settings → Data source credentials**.
+4. **Keep privacy levels consistent** (all **Organizational**) across the environment sources and the
+   Org Data CSV, or Power Query's *Formula.Firewall* may block combining them.
+5. **Refresh.** All environments load into one model; the `environment` tag is available on the base
+   transcript data for filtering.
+
+> **Optional — surface an Environment slicer.** Row-level `environment` is carried on the parsed base
+> data. To slice a specific fact table (e.g. *Agent Sessions*) by environment, add `environment` to that
+> table's `Table.SelectColumns(...)` output in the parser function, then drop a slicer on the column.
+
+</details>
 
 ---
 

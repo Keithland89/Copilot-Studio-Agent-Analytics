@@ -62,6 +62,10 @@ expression 'Source Mode' = "Dataverse"
 
 /// Dataverse environment URL (e.g. https://yourorg.crm.dynamics.com). Used when Source Mode = "Dataverse".
 /// Find it in Power Platform Admin Center → Environments → <your env> → Environment URL.
+/// MULTI-ENVIRONMENT: enter more than one URL separated by a semicolon (or new line) to pull and
+/// combine transcripts from several environments into one report, e.g.
+///   https://org-a.crm.dynamics.com; https://org-b.crm.dynamics.com
+/// Each row is tagged with its source `environment`. A single URL still works unchanged.
 expression 'Dataverse Url' = "" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
 	lineageTag: 1a2b3c4d-dv01-4102-8102-000000000102
 
@@ -74,14 +78,31 @@ expression 'Dataverse Url' = "" meta [IsParameterQuery=true, Type="Text", IsPara
 /// notebook uses, so it exposes the large JSON `content` field in full (the TDS/SQL endpoint truncates
 /// it). Uses the refresher's own Organizational-account login — no app secret in the template.
 /// Pass an optional OData query string (e.g. "?$select=...&$top=50") to limit columns/rows.
+/// MULTI-ENVIRONMENT: `Dataverse Url` may hold one URL or many (semicolon / new-line separated). This
+/// fans the same query out across every environment, tags each row with its source `environment`, and
+/// unions the results into one table. A failed or empty environment is skipped (try…otherwise) so one
+/// bad env never fails the whole refresh. With a single URL the behaviour is unchanged (plus the tag).
 expression DataverseEntity =
 		(entitySetName as text, optional query as text) as table =>
 			let
-				Base = Text.TrimEnd(#"Dataverse Url", "/") & "/api/data/v9.2/",
-				Url = Base & entitySetName & (if query = null then "" else query),
-				Feed = OData.Feed(Url, null, [Implementation = "2.0", ODataVersion = 4])
+				// Split the parameter into a clean list of environment base URLs.
+				RawList = Text.Split(Text.Replace(Text.Replace(#"Dataverse Url", "#(cr)", ";"), "#(lf)", ";"), ";"),
+				Urls = List.Select(List.Transform(RawList, each Text.Trim(_)), each _ <> ""),
+				// Fetch one environment and tag every row with the environment it came from.
+				FetchOne = (baseUrl as text) as table =>
+					let
+						Base = Text.TrimEnd(baseUrl, "/") & "/api/data/v9.2/",
+						Url = Base & entitySetName & (if query = null then "" else query),
+						Feed = OData.Feed(Url, null, [Implementation = "2.0", ODataVersion = 4]),
+						Tagged = Table.AddColumn(Feed, "environment", each baseUrl, type text)
+					in
+						Tagged,
+				// Pull each env independently; drop any that error or are unreachable.
+				PerEnv = List.Transform(Urls, each try FetchOne(_) otherwise null),
+				Kept = List.RemoveNulls(PerEnv),
+				Combined = if List.Count(Kept) = 0 then #table({"environment"}, {}) else Table.Combine(Kept)
 			in
-				Feed
+				Combined
 	lineageTag: 1a2b3c4d-dv01-4103-8103-000000000103
 
 	annotation PBI_ResultType = Function
@@ -142,7 +163,7 @@ expression CsvFromPath =
 expression RawTranscripts =
 		() as table =>
 			let
-				Cols = {"conversationtranscriptid", "content", "conversationstarttime", "name"},
+				Cols = {"conversationtranscriptid", "content", "conversationstarttime", "name", "environment"},
 				Empty = Table.AddColumn(#table(Cols, {}), "agent_schema_hint", each null, type text),
 				Output =
 					if #"Source Mode" = "Dataverse" then
