@@ -13,6 +13,10 @@
 user feedback · Copilot Studio message-credit consumption** — purpose-built to analyse how your
 **Copilot Studio agents** actually perform, resolve, contain, and cost.
 
+![Copilot Studio Agent Analytics — demo](./assets/copilot-studio-agent-analytics-demo.gif)
+
+> *Demo shown with anonymised sample data.*
+
 Found this useful? ⭐ **Star this repo to help others discover it!**
 
 **[Deployment options ↓](#deployment-options)** · **[Connect the template ↓](#connect-the-template)**
