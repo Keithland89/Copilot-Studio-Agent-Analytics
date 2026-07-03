@@ -58,19 +58,8 @@ Schedule the notebooks (or a Fabric pipeline), then enable dataset **Scheduled r
 
 ---
 
-## ⚠️ First-open finishing steps (Power BI Desktop)
+## Pages
 
-This template was produced by trimming the fuller Fabric dashboard down to the **Copilot Studio + PPAC**
-pages. Two finishing steps should be done once in **Power BI Desktop** and re-saved:
-
-1. **Open + refresh + save** to let Desktop re-validate the report (repo convention for `.pbit` edits).
-2. **Check page navigation** — the non-Studio pages and their bookmarks were removed. If any
-   button/bookmark on a kept page still points at a removed page, delete or re-point it.
-3. **Optional — prune the model.** The semantic model still carries the non-Studio tables/measures
-   (harmless, but heavier). To slim it, remove the unused core tables in Desktop; the Copilot Studio
-   pages depend only on the `agent_*`, `credit_consumption_*` (and optional `agents_365` / `copilot_org_data`)
-   tables. Validate a refresh after pruning.
-
-Pages kept: **Studio — Quality & Performance · Conversation Flow & Quality · Topic Explorer · Knowledge
-Files · Error Analysis · User Feedback · Credit Consumption (PPAC)**, plus **Appendix — Key Concepts ·
-Glossary · Signal-Impact Table**.
+**Studio** — Quality & Performance · Conversation Flow & Quality · Topic Explorer · Knowledge Files ·
+Error Analysis · User Feedback · **Credit Consumption (PPAC)**, plus **Appendix** — Key Concepts ·
+Glossary · Signal-Impact Table.
