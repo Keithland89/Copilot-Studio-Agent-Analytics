@@ -1,12 +1,12 @@
-# Fabric deployment — AgentLens for Copilot Studio
+# Path 2 — Fabric
 
 The **Fabric / Lakehouse** build of AgentLens. Notebooks land your Copilot Studio
 data as Delta tables in a Lakehouse; the Power BI template is a thin client over the Lakehouse SQL
 endpoint. Focused on **Copilot Studio agent performance, quality, evaluation, and message-credit
 consumption** — not the broader M365 Copilot value dashboard.
 
-> Prefer the simplest footprint? The **[Dataverse-native build](../README.md#connect-the-template)**
-> (root of this repo) reads transcripts straight from Dataverse in Power Query — no Fabric capacity,
+> Prefer the simplest footprint? [**Path 1 — Dataverse (Direct)**](../1.%20Dataverse%20(Direct)/)
+> reads transcripts straight from Dataverse in Power Query — no Fabric capacity,
 > no notebooks. Use **this Fabric build** when you want scheduled Spark ingestion, larger volumes, or
 > the **PPAC message-credit** pages.
 
