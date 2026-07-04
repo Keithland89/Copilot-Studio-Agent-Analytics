@@ -2,9 +2,11 @@
 
 # 🔎 StudioLens
 
+#### by Microsoft Business Value Advisory (BVA)
+
 ### **for Copilot Studio** — a Power BI template for **deep agent performance & evaluation**: quality, containment, topics, transcripts, errors, feedback, and message-credit consumption.
 
-[![Built by Microsoft](https://img.shields.io/badge/BUILT_BY-MICROSOFT-4F73B8?style=for-the-badge&labelColor=1C2632)](https://github.com/Keithland89/StudioLens-for-Copilot-Studio)
+[![Built by Microsoft BVA](https://img.shields.io/badge/BUILT_BY-MICROSOFT_BVA-4F73B8?style=for-the-badge&labelColor=1C2632)](https://github.com/Keithland89/StudioLens-for-Copilot-Studio)
 [![Power BI Template](https://img.shields.io/badge/POWER_BI-TEMPLATE-F2C811?style=for-the-badge&logo=powerbi&logoColor=1C2632&labelColor=1C2632)](#choose-your-path)
 [![Deploy](https://img.shields.io/badge/DEPLOY-DATAVERSE_OR_FABRIC-09B39D?style=for-the-badge&labelColor=1C2632)](#choose-your-path)
 [![Stars](https://img.shields.io/github/stars/Keithland89/StudioLens-for-Copilot-Studio?style=for-the-badge&color=7F215D&labelColor=1C2632)](https://github.com/Keithland89/StudioLens-for-Copilot-Studio/stargazers)
@@ -67,8 +69,12 @@ scheduling. New to StudioLens? Start with **Dataverse (Direct)** for the fastest
 
 ## Related
 
-This is a **standalone** template focused on **Copilot Studio agent performance & evaluation**. If you
-also want the broader **Microsoft 365 Copilot** value story (audit-log usage, licensing/readiness,
-adoption, org-wide value across all Copilot surfaces — not just Studio agents), that's a **separate**
-project: the [AI Business Value Dashboard](https://github.com/Keithland89/AI-Business-Value-Dashboard).
-The two are complementary but independent — use this one when your focus is **Copilot Studio agents**.
+**StudioLens is part of [CopilotScope](https://github.com/Keithland89/CopilotScope)** — a wider kit of
+Power BI "lenses" for Microsoft 365 Copilot (value, adoption, readiness, maturity, behaviour, leadership).
+StudioLens is the **Copilot Studio agent** lens, available here as a **standalone** template (incl.
+Dataverse-Direct, no Fabric) for teams who only need the agent deep-dive. Want the broader
+whole-Copilot value story too? See **[CopilotScope](https://github.com/Keithland89/CopilotScope)**.
+
+## About
+
+StudioLens and CopilotScope are created and maintained by the **Microsoft Business Value Advisory (BVA)** team.
