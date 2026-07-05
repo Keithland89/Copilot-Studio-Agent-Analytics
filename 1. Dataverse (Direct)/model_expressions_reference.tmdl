@@ -155,16 +155,52 @@ expression CsvFromPath =
 
 	annotation PBI_ResultType = Function
 
+/// Helper: turn a raw Dataverse agent schemaname into a friendly display name.
+/// Preference: orchestrator/header agents cluster to ONE "M365 Copilot Orchestrator" label ->
+/// the real bot display name (bot_name_hint, when it isn't just the schema) -> Employee Self-Service
+/// <role> pattern -> humanised token (publisher prefix like crb93_/cr23c_/msdyn_ stripped, words
+/// title-cased, common acronyms preserved). Keeps the Agent Evaluation page readable instead of
+/// showing tokens like "Crb93 Askbtpentest" or many "Copilots Header xxxxx" rows.
+expression CleanAgentName =
+		(schema as nullable text, optional botName as nullable text) as text =>
+			let
+				Acronyms = {"BT", "HR", "IT", "AI", "HQ", "QA", "CRM", "ERP", "M365", "API", "KPI", "PDF", "SLA", "VPN"},
+				s = if schema = null then "" else Text.From(schema),
+				lc = Text.Lower(s),
+				isOrch = Text.Contains(lc, "header") or Text.Contains(lc, "orchestrator"),
+				nameOk = botName <> null and Text.Trim(Text.From(botName)) <> "" and Text.Lower(Text.Trim(Text.From(botName))) <> lc,
+				ssPos = Text.PositionOf(lc, "copilotforemployeeselfservice"),
+				ssRole = if ssPos >= 0 then Text.Range(lc, ssPos + Text.Length("copilotforemployeeselfservice")) else "",
+				ssRoleClean = Text.Select(ssRole, {"a" .. "z"}),
+				ssLabel = if ssRoleClean = "" then "Employee Self-Service"
+						  else "Employee Self-Service " & (if List.Contains(Acronyms, Text.Upper(ssRoleClean)) then Text.Upper(ssRoleClean) else Text.Proper(ssRoleClean)),
+				// strip the publisher prefix: drop everything up to and including the FIRST underscore
+				afterFirst = if Text.Contains(s, "_") then Text.AfterDelimiter(s, "_") else s,
+				spaced = Text.Replace(Text.Replace(afterFirst, "_", " "), "-", " "),
+				words = List.Select(Text.Split(spaced, " "), each _ <> ""),
+				titled = Text.Combine(List.Transform(words, each if List.Contains(Acronyms, Text.Upper(_)) then Text.Upper(_) else Text.Proper(_)), " ")
+			in
+				if isOrch then "M365 Copilot Orchestrator"
+				else if nameOk then Text.Trim(Text.From(botName))
+				else if ssPos >= 0 then ssLabel
+				else if titled = "" then "Unknown agent"
+				else titled
+	lineageTag: 1a2b3c4d-dv01-4105-8105-000000000199
+
+	annotation PBI_ResultType = Function
+
 /// Helper: the RAW conversation transcripts, returned identically whichever source mode is active —
-/// columns conversationtranscriptid | content | conversationstarttime | name | agent_schema_hint. The
-/// parser consumes this, so logic is source-agnostic. agent_schema_hint comes from the Dataverse bot
-/// lookup ($expand bot_conversationtranscriptid($select=schemaname)) so single-agent transcripts (whose
-/// JSON content carries no botSchemaName) still resolve a primary agent; it is null in CSV mode.
+/// columns conversationtranscriptid | content | conversationstarttime | name | agent_schema_hint | bot_name_hint.
+/// The parser consumes this, so logic is source-agnostic. agent_schema_hint (the schemaname token) and
+/// bot_name_hint (the human-authored bot display name) both come from the Dataverse bot lookup
+/// ($expand bot_conversationtranscriptid($select=schemaname,name)) so single-agent transcripts (whose
+/// JSON content carries no botSchemaName) still resolve a primary agent AND a friendly name; both are
+/// null in CSV mode. bot_name_hint is what CleanAgentName prefers so agents show their real display name.
 expression RawTranscripts =
 		() as table =>
 			let
 				Cols = {"conversationtranscriptid", "content", "conversationstarttime", "name", "environment"},
-				Empty = Table.AddColumn(#table(Cols, {}), "agent_schema_hint", each null, type text),
+				Empty = Table.AddColumn(Table.AddColumn(#table(Cols, {}), "agent_schema_hint", each null, type text), "bot_name_hint", each null, type text),
 				Output =
 					if #"Source Mode" = "Dataverse" then
 						let
@@ -172,17 +208,22 @@ expression RawTranscripts =
 							// bot_conversationtranscriptid navigation property, so fall back to a plain
 							// select (agent_schema_hint = null; the parser then derives the agent from
 							// the JSON content). Keeps the Dataverse path robust across environments.
-							SrcExpanded = try DataverseEntity("conversationtranscripts", "?$select=conversationtranscriptid,content,conversationstarttime,name&$expand=bot_conversationtranscriptid($select=schemaname)"),
+							SrcExpanded = try DataverseEntity("conversationtranscripts", "?$select=conversationtranscriptid,content,conversationstarttime,name&$expand=bot_conversationtranscriptid($select=schemaname,name)"),
 							SrcPlain    = DataverseEntity("conversationtranscripts", "?$select=conversationtranscriptid,content,conversationstarttime,name"),
 							HasExpand   = SrcExpanded[HasError] = false and List.Contains(Table.ColumnNames(SrcExpanded[Value]), "bot_conversationtranscriptid"),
 							Src         = if SrcExpanded[HasError] = false then SrcExpanded[Value] else SrcPlain,
 							Have = List.Intersect({Cols, Table.ColumnNames(Src)}),
-							// Flatten the bot lookup record to a schemaname text hint when present.
+							// Flatten the bot lookup record to a schemaname token hint when present.
 							WithHint = Table.AddColumn(Src, "agent_schema_hint", each
 									if not HasExpand then null else
 									let b = try [bot_conversationtranscriptid] otherwise null
 									in if b = null then null else (try Text.From(Record.FieldOrDefault(b, "schemaname", null)) otherwise null), type text),
-							Keep = Table.SelectColumns(WithHint, List.Combine({Have, {"agent_schema_hint"}}), MissingField.UseNull)
+							// Flatten the bot lookup record to the friendly bot display name when present.
+							WithBotName = Table.AddColumn(WithHint, "bot_name_hint", each
+									if not HasExpand then null else
+									let b = try [bot_conversationtranscriptid] otherwise null
+									in if b = null then null else (try Text.From(Record.FieldOrDefault(b, "name", null)) otherwise null), type text),
+							Keep = Table.SelectColumns(WithBotName, List.Combine({Have, {"agent_schema_hint", "bot_name_hint"}}), MissingField.UseNull)
 						in
 							Keep
 					else if #"Source Mode" = "TranscriptCSV" then
@@ -191,9 +232,10 @@ expression RawTranscripts =
 							Prom = Table.PromoteHeaders(Csv, [PromoteAllScalars = true]),
 							Have = List.Intersect({Cols, Table.ColumnNames(Prom)}),
 							Sel = Table.SelectColumns(Prom, Have, MissingField.UseNull),
-							WithHint = Table.AddColumn(Sel, "agent_schema_hint", each (if List.Contains(Table.ColumnNames(Prom), "agent_schema_hint") then Record.FieldOrDefault(_, "agent_schema_hint", null) else null), type text)
+							WithHint = Table.AddColumn(Sel, "agent_schema_hint", each (if List.Contains(Table.ColumnNames(Prom), "agent_schema_hint") then Record.FieldOrDefault(_, "agent_schema_hint", null) else null), type text),
+							WithBotName = Table.AddColumn(WithHint, "bot_name_hint", each (if List.Contains(Table.ColumnNames(Prom), "bot_name_hint") then Record.FieldOrDefault(_, "bot_name_hint", null) else null), type text)
 						in
-							WithHint
+							WithBotName
 					else
 						Empty
 			in
@@ -571,7 +613,7 @@ expression Parse_Performance =
 								ConversationTranscriptId = [conversationtranscriptid],
 								ConversationStartTime = (try DateTime.From([conversationstarttime]) otherwise startDt),
 								SchemaVersion = null,
-								BotName = (let h = try [agent_schema_hint] otherwise null in if h <> null and h <> "" then h else (if primaryAgent = null then "" else primaryAgent)),
+								BotName = CleanAgentName((let h = try [agent_schema_hint] otherwise null in if h <> null and h <> "" then h else (if primaryAgent = null then "" else primaryAgent)), (try [bot_name_hint] otherwise null)),
 								BotId = null,
 								AADTenantId = null,
 								BatchId = null,
